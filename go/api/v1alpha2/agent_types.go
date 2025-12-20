@@ -262,6 +262,7 @@ type AgentStatus struct {
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status",description="Whether or not the agent is ready to serve requests."
 // +kubebuilder:printcolumn:name="Accepted",type="string",JSONPath=".status.conditions[?(@.type=='Accepted')].status",description="Whether or not the agent has been accepted by the system."
 // +kubebuilder:storageversion
+// +kubebuilder:validation:XValidation:rule="self.metadata.name.matches('^[a-z]([a-z0-9-]*[a-z0-9])?$')",message="Agent name must be a valid DNS-1035 label: start with a lowercase letter, contain only lowercase letters, numbers, or hyphens, and end with a letter or number"
 
 // Agent is the Schema for the agents API.
 type Agent struct {
