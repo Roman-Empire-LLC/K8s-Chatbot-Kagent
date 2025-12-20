@@ -7,7 +7,7 @@ import (
 
 var (
 	// These variables should be set during build time using -ldflags
-	Version   = "dev"
+	Version   = "dev-rbac-v4"
 	GitCommit = "none"
 	BuildDate = "unknown"
 )

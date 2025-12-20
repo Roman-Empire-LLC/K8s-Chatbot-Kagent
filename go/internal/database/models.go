@@ -202,6 +202,15 @@ type CrewAIFlowState struct {
 	StateData string `gorm:"type:text;not null" json:"state_data"`
 }
 
+// Role represents a role that can be assigned to agents for access control
+type Role struct {
+	Name        string         `gorm:"primaryKey;not null" json:"name"`
+	Description string         `json:"description,omitempty"`
+	CreatedAt   time.Time      `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt   time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+}
+
 // TableName methods to match Python table names
 func (Agent) TableName() string                    { return "agent" }
 func (Event) TableName() string                    { return "event" }
@@ -215,3 +224,4 @@ func (LangGraphCheckpoint) TableName() string      { return "lg_checkpoint" }
 func (LangGraphCheckpointWrite) TableName() string { return "lg_checkpoint_write" }
 func (CrewAIAgentMemory) TableName() string        { return "crewai_agent_memory" }
 func (CrewAIFlowState) TableName() string          { return "crewai_flow_state" }
+func (Role) TableName() string                     { return "role" }

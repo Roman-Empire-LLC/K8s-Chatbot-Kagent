@@ -38,6 +38,7 @@ const (
 	APIPathFeedback        = "/api/feedback"
 	APIPathLangGraph       = "/api/langgraph"
 	APIPathCrewAI          = "/api/crewai"
+	APIPathRoles           = "/api/roles"
 )
 
 var defaultModelConfig = types.NamespacedName{
@@ -220,6 +221,13 @@ func (s *HTTPServer) setupRoutes() {
 	s.router.HandleFunc(APIPathCrewAI+"/memory", adaptHandler(s.handlers.CrewAI.HandleResetMemory)).Methods(http.MethodDelete)
 	s.router.HandleFunc(APIPathCrewAI+"/flows/state", adaptHandler(s.handlers.CrewAI.HandleStoreFlowState)).Methods(http.MethodPost)
 	s.router.HandleFunc(APIPathCrewAI+"/flows/state", adaptHandler(s.handlers.CrewAI.HandleGetFlowState)).Methods(http.MethodGet)
+
+	// Roles
+	s.router.HandleFunc(APIPathRoles, adaptHandler(s.handlers.Roles.HandleListRoles)).Methods(http.MethodGet)
+	s.router.HandleFunc(APIPathRoles, adaptHandler(s.handlers.Roles.HandleCreateRole)).Methods(http.MethodPost)
+	s.router.HandleFunc(APIPathRoles+"/{name}", adaptHandler(s.handlers.Roles.HandleGetRole)).Methods(http.MethodGet)
+	s.router.HandleFunc(APIPathRoles+"/{name}", adaptHandler(s.handlers.Roles.HandleUpdateRole)).Methods(http.MethodPut)
+	s.router.HandleFunc(APIPathRoles+"/{name}", adaptHandler(s.handlers.Roles.HandleDeleteRole)).Methods(http.MethodDelete)
 
 	// A2A
 	s.router.PathPrefix(APIPathA2A + "/{namespace}/{name}").Handler(s.config.A2AHandler)

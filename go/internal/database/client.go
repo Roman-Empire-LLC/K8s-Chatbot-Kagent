@@ -65,6 +65,12 @@ type Client interface {
 	ResetCrewAIMemory(userID, threadID string) error
 	StoreCrewAIFlowState(state *CrewAIFlowState) error
 	GetCrewAIFlowState(userID, threadID string) (*CrewAIFlowState, error)
+
+	// Role methods
+	StoreRole(role *Role) error
+	GetRole(name string) (*Role, error)
+	ListRoles() ([]Role, error)
+	DeleteRole(name string) error
 }
 
 type LangGraphCheckpointTuple struct {
@@ -663,4 +669,26 @@ func (c *clientImpl) GetCrewAIFlowState(userID, threadID string) (*CrewAIFlowSta
 	}
 
 	return &state, nil
+}
+
+// Role methods
+
+// StoreRole creates or updates a role
+func (c *clientImpl) StoreRole(role *Role) error {
+	return save(c.db, role)
+}
+
+// GetRole retrieves a role by name
+func (c *clientImpl) GetRole(name string) (*Role, error) {
+	return get[Role](c.db, Clause{Key: "name", Value: name})
+}
+
+// ListRoles lists all roles
+func (c *clientImpl) ListRoles() ([]Role, error) {
+	return list[Role](c.db)
+}
+
+// DeleteRole deletes a role by name
+func (c *clientImpl) DeleteRole(name string) error {
+	return delete[Role](c.db, Clause{Key: "name", Value: name})
 }
