@@ -1,6 +1,7 @@
 package a2a
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"sync"
@@ -31,15 +32,24 @@ type handlerMux struct {
 	lock           sync.RWMutex
 	basePathPrefix string
 	authenticator  auth.AuthProvider
+	authorizer     auth.Authorizer
 }
 
 var _ A2AHandlerMux = &handlerMux{}
 
-func NewA2AHttpMux(pathPrefix string, authenticator auth.AuthProvider) *handlerMux {
+// respondWithJSONError writes a JSON error response in the standard format
+func respondWithJSONError(w http.ResponseWriter, statusCode int, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	json.NewEncoder(w).Encode(map[string]string{"error": message}) //nolint:errcheck
+}
+
+func NewA2AHttpMux(pathPrefix string, authenticator auth.AuthProvider, authorizer auth.Authorizer) *handlerMux {
 	return &handlerMux{
 		handlers:       make(map[string]http.Handler),
 		basePathPrefix: pathPrefix,
 		authenticator:  authenticator,
+		authorizer:     authorizer,
 	}
 }
 
@@ -81,25 +91,58 @@ func (a *handlerMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// get the handler name from the first path segment
 	agentNamespace, ok := vars["namespace"]
 	if !ok || agentNamespace == "" {
-		http.Error(w, "Agent namespace not provided", http.StatusBadRequest)
+		respondWithJSONError(w, http.StatusBadRequest, "Agent namespace not provided")
 		return
 	}
 	agentName, ok := vars["name"]
 	if !ok || agentName == "" {
-		http.Error(w, "Agent name not provided", http.StatusBadRequest)
+		respondWithJSONError(w, http.StatusBadRequest, "Agent name not provided")
 		return
 	}
 
 	handlerName := common.ResourceRefString(agentNamespace, agentName)
 
+	fmt.Printf("\n################################################################\n")
+	fmt.Printf("### [A2A HANDLER] agent=%s authorizer=%v\n", handlerName, a.authorizer != nil)
+	fmt.Printf("################################################################\n\n")
+
+	// Check authorization if authorizer is configured
+	if a.authorizer != nil {
+		session, ok := auth.AuthSessionFrom(r.Context())
+		fmt.Printf("\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n")
+		fmt.Printf("@@@ [A2A AUTH CHECK] sessionFound=%v\n", ok)
+		if ok {
+			fmt.Printf("@@@ [A2A AUTH CHECK] principal=%+v\n", session.Principal())
+		}
+		fmt.Printf("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n\n")
+		if !ok {
+			respondWithJSONError(w, http.StatusUnauthorized, "Unauthorized: no valid session found")
+			return
+		}
+		resource := auth.Resource{
+			Type: "Agent",
+			Name: handlerName,
+		}
+		if err := a.authorizer.Check(r.Context(), session.Principal(), auth.VerbGet, resource); err != nil {
+			fmt.Printf("\n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
+			fmt.Printf("$$$ [A2A DENIED] err=%v\n", err)
+			fmt.Printf("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n\n")
+			respondWithJSONError(w, http.StatusForbidden, fmt.Sprintf("Forbidden: %v", err))
+			return
+		}
+		fmt.Printf("\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
+		fmt.Printf("+++ [A2A ALLOWED]\n")
+		fmt.Printf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\n")
+	} else {
+		fmt.Printf("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
+		fmt.Printf("~~~ [A2A NO AUTHORIZER] skipping auth check\n")
+		fmt.Printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
+	}
+
 	// get the underlying handler
 	handlerHandler, ok := a.getHandler(handlerName)
 	if !ok {
-		http.Error(
-			w,
-			fmt.Sprintf("Agent %s not found", handlerName),
-			http.StatusNotFound,
-		)
+		respondWithJSONError(w, http.StatusNotFound, fmt.Sprintf("Agent %s not found", handlerName))
 		return
 	}
 

@@ -27,9 +27,12 @@ import (
 
 //nolint:gocyclo
 func main() {
-	authorizer := &auth.NoopAuthorizer{}
 	authenticator := &auth.UnsecureAuthenticator{}
 	app.Start(func(bootstrap app.BootstrapConfig) (*app.ExtensionConfig, error) {
+		// Use RBACAuthorizer for role-based access control on Agents
+		authorizer := &auth.RBACAuthorizer{
+			KubeClient: bootstrap.Manager.GetClient(),
+		}
 		return &app.ExtensionConfig{
 			Authenticator:    authenticator,
 			Authorizer:       authorizer,

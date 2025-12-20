@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/kagent-dev/kagent/go/pkg/auth"
 	"k8s.io/apimachinery/pkg/types"
@@ -29,13 +30,31 @@ func (a *UnsecureAuthenticator) Authenticate(ctx context.Context, reqHeaders htt
 	if userID == "" {
 		userID = "admin@kagent.dev"
 	}
+
+	// Parse roles from X-User-Roles header (comma-separated)
+	var roles []string
+	rolesHeader := reqHeaders.Get("X-User-Roles")
+	if rolesHeader != "" {
+		for _, role := range strings.Split(rolesHeader, ",") {
+			role = strings.TrimSpace(role)
+			if role != "" {
+				roles = append(roles, role)
+			}
+		}
+	}
+
+	fmt.Printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
+	fmt.Printf("!!! [AUTHN] userID=%s rolesHeader=%q roles=%v\n", userID, rolesHeader, roles)
+	fmt.Printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n")
+
 	agentId := reqHeaders.Get("X-Agent-Name")
 	authHeader := reqHeaders.Get("Authorization")
 
 	return &SimpleSession{
 		P: auth.Principal{
 			User: auth.User{
-				ID: userID,
+				ID:    userID,
+				Roles: roles,
 			},
 			Agent: auth.Agent{
 				ID: agentId,

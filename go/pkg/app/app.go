@@ -428,7 +428,7 @@ func Start(getExtensionConfig GetExtensionConfig) {
 	}
 
 	// Register A2A handlers on all replicas
-	a2aHandler := a2a.NewA2AHttpMux(httpserver.APIPathA2A, extensionCfg.Authenticator)
+	a2aHandler := a2a.NewA2AHttpMux(httpserver.APIPathA2A, extensionCfg.Authenticator, extensionCfg.Authorizer)
 
 	if err := mgr.Add(a2a.NewA2ARegistrar(
 		mgr.GetCache(),

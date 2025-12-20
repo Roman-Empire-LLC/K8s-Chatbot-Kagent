@@ -58,6 +58,12 @@ type AgentSpec struct {
 	// and made available to the agent under the `/skills` folder.
 	// +optional
 	Skills *SkillForAgent `json:"skills,omitempty"`
+
+	// AllowedRoles specifies which roles can access this agent.
+	// Roles are matched against the X-User-Roles header (typically set by Istio/IdP).
+	// If empty, all authenticated users can access the agent.
+	// +optional
+	AllowedRoles []string `json:"allowedRoles,omitempty"`
 }
 
 type SkillForAgent struct {
