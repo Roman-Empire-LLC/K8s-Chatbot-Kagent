@@ -879,3 +879,21 @@ func (c *InMemoryFakeClient) GetCrewAIFlowState(userID, threadID string) (*datab
 
 	return state, nil
 }
+
+// Role methods - stub implementations
+
+func (c *InMemoryFakeClient) StoreRole(role *database.Role) error {
+	return nil
+}
+
+func (c *InMemoryFakeClient) GetRole(name string) (*database.Role, error) {
+	return nil, gorm.ErrRecordNotFound
+}
+
+func (c *InMemoryFakeClient) ListRoles() ([]database.Role, error) {
+	return []database.Role{}, nil
+}
+
+func (c *InMemoryFakeClient) DeleteRole(name string) error {
+	return nil
+}

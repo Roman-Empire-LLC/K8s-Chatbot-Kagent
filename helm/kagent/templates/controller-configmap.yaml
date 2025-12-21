@@ -31,6 +31,12 @@ data:
   {{- else if and (eq .Values.database.type "postgres") (not (eq .Values.database.postgres.url "")) }}
   POSTGRES_DATABASE_URL: {{ .Values.database.postgres.url | quote }}
   {{- end }}
+  {{- if .Values.minio.enabled }}
+  MINIO_ENDPOINT: {{ .Values.minio.endpoint | quote }}
+  MINIO_ACCESS_KEY: {{ .Values.minio.auth.rootUser | quote }}
+  MINIO_SECRET_KEY: {{ .Values.minio.auth.rootPassword | quote }}
+  MINIO_USE_SSL: {{ .Values.minio.useSSL | quote }}
+  {{- end }}
   STREAMING_INITIAL_BUF_SIZE: {{ .Values.controller.streaming.initialBufSize | quote }}
   STREAMING_MAX_BUF_SIZE: {{ .Values.controller.streaming.maxBufSize | quote }}
   STREAMING_TIMEOUT: {{ .Values.controller.streaming.timeout | quote }}

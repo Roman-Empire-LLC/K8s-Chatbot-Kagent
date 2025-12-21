@@ -39,6 +39,7 @@ import (
 	"github.com/kagent-dev/kagent/go/internal/a2a"
 	"github.com/kagent-dev/kagent/go/internal/database"
 	versionmetrics "github.com/kagent-dev/kagent/go/internal/metrics"
+	minioclient "github.com/kagent-dev/kagent/go/internal/minio"
 
 	"github.com/kagent-dev/kagent/go/internal/controller/reconciler"
 	reconcilerutils "github.com/kagent-dev/kagent/go/internal/controller/reconciler/utils"
@@ -122,6 +123,12 @@ type Config struct {
 		Path string
 		Url  string
 	}
+	Minio struct {
+		Endpoint  string
+		AccessKey string
+		SecretKey string
+		UseSSL    bool
+	}
 }
 
 func (cfg *Config) SetFlags(commandLine *flag.FlagSet) {
@@ -153,6 +160,11 @@ func (cfg *Config) SetFlags(commandLine *flag.FlagSet) {
 	commandLine.StringVar(&cfg.Database.Url, "postgres-database-url", "postgres://postgres:kagent@db.kagent.svc.cluster.local:5432/crud", "The URL of the PostgreSQL database.")
 
 	commandLine.StringVar(&cfg.WatchNamespaces, "watch-namespaces", "", "The namespaces to watch for .")
+
+	commandLine.StringVar(&cfg.Minio.Endpoint, "minio-endpoint", "", "The MinIO endpoint (e.g., minio:9000). Leave empty to disable MinIO.")
+	commandLine.StringVar(&cfg.Minio.AccessKey, "minio-access-key", "", "The MinIO access key.")
+	commandLine.StringVar(&cfg.Minio.SecretKey, "minio-secret-key", "", "The MinIO secret key.")
+	commandLine.BoolVar(&cfg.Minio.UseSSL, "minio-use-ssl", false, "Use SSL for MinIO connection.")
 
 	commandLine.Var(&cfg.Streaming.MaxBufSize, "streaming-max-buf-size", "The maximum size of the streaming buffer.")
 	commandLine.Var(&cfg.Streaming.InitialBufSize, "streaming-initial-buf-size", "The initial size of the streaming buffer.")
@@ -475,6 +487,26 @@ func Start(getExtensionConfig GetExtensionConfig) {
 		os.Exit(1)
 	}
 
+	// Initialize MinIO client if configured
+	var minioClient *minioclient.Client
+	if cfg.Minio.Endpoint != "" {
+		setupLog.Info("Initializing MinIO client", "endpoint", cfg.Minio.Endpoint)
+		var minioErr error
+		minioClient, minioErr = minioclient.NewClient(&minioclient.Config{
+			Endpoint:        cfg.Minio.Endpoint,
+			AccessKeyID:     cfg.Minio.AccessKey,
+			SecretAccessKey: cfg.Minio.SecretKey,
+			UseSSL:          cfg.Minio.UseSSL,
+		})
+		if minioErr != nil {
+			setupLog.Error(minioErr, "unable to initialize MinIO client")
+			os.Exit(1)
+		}
+		setupLog.Info("MinIO client initialized successfully")
+	} else {
+		setupLog.Info("MinIO not configured, RAG file storage will be disabled")
+	}
+
 	httpServer, err := httpserver.NewHTTPServer(httpserver.ServerConfig{
 		Router:            router,
 		BindAddr:          cfg.HttpServerAddr,
@@ -484,6 +516,7 @@ func Start(getExtensionConfig GetExtensionConfig) {
 		DbClient:          dbClient,
 		Authorizer:        extensionCfg.Authorizer,
 		Authenticator:     extensionCfg.Authenticator,
+		MinioClient:       minioClient,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to create HTTP server")

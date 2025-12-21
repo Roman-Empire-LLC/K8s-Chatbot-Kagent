@@ -5,6 +5,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kagent-dev/kagent/go/internal/database"
+	"github.com/kagent-dev/kagent/go/internal/minio"
 	"github.com/kagent-dev/kagent/go/pkg/auth"
 )
 
@@ -26,6 +27,7 @@ type Handlers struct {
 	Checkpoints     *CheckpointsHandler
 	CrewAI          *CrewAIHandler
 	Roles           *RolesHandler
+	RAGIndices      *RAGIndicesHandler
 }
 
 // Base holds common dependencies for all handlers
@@ -37,7 +39,7 @@ type Base struct {
 }
 
 // NewHandlers creates a new Handlers instance with all handler components
-func NewHandlers(kubeClient client.Client, defaultModelConfig types.NamespacedName, dbService database.Client, watchedNamespaces []string, authorizer auth.Authorizer) *Handlers {
+func NewHandlers(kubeClient client.Client, defaultModelConfig types.NamespacedName, dbService database.Client, watchedNamespaces []string, authorizer auth.Authorizer, minioClient *minio.Client) *Handlers {
 	base := &Base{
 		KubeClient:         kubeClient,
 		DefaultModelConfig: defaultModelConfig,
@@ -62,5 +64,6 @@ func NewHandlers(kubeClient client.Client, defaultModelConfig types.NamespacedNa
 		Checkpoints:     NewCheckpointsHandler(base),
 		CrewAI:          NewCrewAIHandler(base),
 		Roles:           NewRolesHandler(base),
+		RAGIndices:      NewRAGIndicesHandler(base, minioClient),
 	}
 }

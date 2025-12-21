@@ -9,6 +9,7 @@ import (
 	"github.com/kagent-dev/kagent/go/internal/a2a"
 	"github.com/kagent-dev/kagent/go/internal/database"
 	"github.com/kagent-dev/kagent/go/internal/httpserver/handlers"
+	"github.com/kagent-dev/kagent/go/internal/minio"
 	common "github.com/kagent-dev/kagent/go/internal/utils"
 	"github.com/kagent-dev/kagent/go/internal/version"
 	"github.com/kagent-dev/kagent/go/pkg/auth"
@@ -39,6 +40,7 @@ const (
 	APIPathLangGraph       = "/api/langgraph"
 	APIPathCrewAI          = "/api/crewai"
 	APIPathRoles           = "/api/roles"
+	APIPathRAGIndices      = "/api/indices"
 )
 
 var defaultModelConfig = types.NamespacedName{
@@ -56,6 +58,7 @@ type ServerConfig struct {
 	DbClient          database.Client
 	Authenticator     auth.AuthProvider
 	Authorizer        auth.Authorizer
+	MinioClient       *minio.Client
 }
 
 // HTTPServer is the structure that manages the HTTP server
@@ -75,7 +78,7 @@ func NewHTTPServer(config ServerConfig) (*HTTPServer, error) {
 	return &HTTPServer{
 		config:        config,
 		router:        config.Router,
-		handlers:      handlers.NewHandlers(config.KubeClient, defaultModelConfig, config.DbClient, config.WatchedNamespaces, config.Authorizer),
+		handlers:      handlers.NewHandlers(config.KubeClient, defaultModelConfig, config.DbClient, config.WatchedNamespaces, config.Authorizer, config.MinioClient),
 		authenticator: config.Authenticator,
 	}, nil
 }
@@ -228,6 +231,15 @@ func (s *HTTPServer) setupRoutes() {
 	s.router.HandleFunc(APIPathRoles+"/{name}", adaptHandler(s.handlers.Roles.HandleGetRole)).Methods(http.MethodGet)
 	s.router.HandleFunc(APIPathRoles+"/{name}", adaptHandler(s.handlers.Roles.HandleUpdateRole)).Methods(http.MethodPut)
 	s.router.HandleFunc(APIPathRoles+"/{name}", adaptHandler(s.handlers.Roles.HandleDeleteRole)).Methods(http.MethodDelete)
+
+	// RAG Indices
+	s.router.HandleFunc(APIPathRAGIndices, adaptHandler(s.handlers.RAGIndices.HandleListRAGIndices)).Methods(http.MethodGet)
+	s.router.HandleFunc(APIPathRAGIndices, adaptHandler(s.handlers.RAGIndices.HandleCreateRAGIndex)).Methods(http.MethodPost)
+	s.router.HandleFunc(APIPathRAGIndices+"/{name}", adaptHandler(s.handlers.RAGIndices.HandleGetRAGIndex)).Methods(http.MethodGet)
+	s.router.HandleFunc(APIPathRAGIndices+"/{name}", adaptHandler(s.handlers.RAGIndices.HandleDeleteRAGIndex)).Methods(http.MethodDelete)
+	s.router.HandleFunc(APIPathRAGIndices+"/{name}/documents", adaptHandler(s.handlers.RAGIndices.HandleListDocuments)).Methods(http.MethodGet)
+	s.router.HandleFunc(APIPathRAGIndices+"/{name}/upload", adaptHandler(s.handlers.RAGIndices.HandleUploadDocument)).Methods(http.MethodPost)
+	s.router.HandleFunc(APIPathRAGIndices+"/{name}/documents/{filename}", adaptHandler(s.handlers.RAGIndices.HandleDownloadDocument)).Methods(http.MethodGet)
 
 	// A2A
 	s.router.PathPrefix(APIPathA2A + "/{namespace}/{name}").Handler(s.config.A2AHandler)
