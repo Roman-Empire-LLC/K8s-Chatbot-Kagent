@@ -897,3 +897,29 @@ func (c *InMemoryFakeClient) ListRoles() ([]database.Role, error) {
 func (c *InMemoryFakeClient) DeleteRole(name string) error {
 	return nil
 }
+
+// DocumentStatus methods - stub implementations
+
+func (c *InMemoryFakeClient) StoreDocumentStatus(status *database.DocumentStatus) error {
+	return nil
+}
+
+func (c *InMemoryFakeClient) GetDocumentStatus(indexName, filename string) (*database.DocumentStatus, error) {
+	return nil, gorm.ErrRecordNotFound
+}
+
+func (c *InMemoryFakeClient) ListDocumentStatusesForIndex(indexName string) ([]database.DocumentStatus, error) {
+	return []database.DocumentStatus{}, nil
+}
+
+func (c *InMemoryFakeClient) UpdateDocumentStatus(indexName, filename, status string, errorMsg string) error {
+	return nil
+}
+
+func (c *InMemoryFakeClient) DeleteDocumentStatus(indexName, filename string) error {
+	return nil
+}
+
+func (c *InMemoryFakeClient) DeleteDocumentStatusesForIndex(indexName string) error {
+	return nil
+}

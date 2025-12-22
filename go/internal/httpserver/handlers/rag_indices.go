@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/kagent-dev/kagent/go/internal/database"
 	"github.com/kagent-dev/kagent/go/internal/httpserver/errors"
 	"github.com/kagent-dev/kagent/go/internal/minio"
 	"github.com/kagent-dev/kagent/go/pkg/client/api"
@@ -50,6 +52,7 @@ type RAGDocument struct {
 	Name         string    `json:"name"`
 	Size         int64     `json:"size"`
 	LastModified time.Time `json:"last_modified"`
+	Status       string    `json:"status,omitempty"`
 }
 
 // CreateRAGIndexRequest represents the request body for creating a RAG index
@@ -177,6 +180,16 @@ func (h *RAGIndicesHandler) HandleCreateRAGIndex(w ErrorResponseWriter, r *http.
 		return
 	}
 
+	// Subscribe bucket to webhook for RAG document processing
+	// KAGENT matches the suffix in env vars MINIO_NOTIFY_WEBHOOK_ENABLE_KAGENT
+	if err := h.MinioClient.SetBucketNotification(r.Context(), req.Name, "KAGENT"); err != nil {
+		log.Error(err, "Failed to set bucket notification")
+		// Rollback bucket creation
+		_ = h.MinioClient.DeleteBucket(r.Context(), req.Name)
+		w.RespondWithError(errors.NewInternalServerError("Failed to configure index notifications", err))
+		return
+	}
+
 	// Create metadata
 	index := RAGIndex{
 		Name:        req.Name,
@@ -233,6 +246,12 @@ func (h *RAGIndicesHandler) HandleDeleteRAGIndex(w ErrorResponseWriter, r *http.
 		return
 	}
 
+	// Delete all document statuses for this index
+	if err := h.DatabaseService.DeleteDocumentStatusesForIndex(indexName); err != nil {
+		log.Error(err, "Failed to delete document statuses")
+		// Don't fail the request, the bucket is already deleted
+	}
+
 	log.Info("Successfully deleted RAG index")
 	data := api.NewResponse(struct{}{}, "Successfully deleted RAG index", false)
 	RespondWithJSON(w, http.StatusOK, data)
@@ -274,17 +293,35 @@ func (h *RAGIndicesHandler) HandleListDocuments(w ErrorResponseWriter, r *http.R
 		return
 	}
 
-	// Filter out metadata file
+	// Get document statuses from database
+	statuses, err := h.DatabaseService.ListDocumentStatusesForIndex(indexName)
+	if err != nil {
+		log.Error(err, "Failed to list document statuses")
+		// Continue without status info
+	}
+
+	// Create a map of filename -> status for quick lookup
+	statusMap := make(map[string]string)
+	for _, s := range statuses {
+		statusMap[s.Filename] = s.Status
+	}
+
+	// Filter out metadata file and merge with status
 	var documents []RAGDocument
 	for _, obj := range objects {
 		if obj.Name == metadataFile {
 			continue
 		}
-		documents = append(documents, RAGDocument{
+		doc := RAGDocument{
 			Name:         obj.Name,
 			Size:         obj.Size,
 			LastModified: obj.LastModified,
-		})
+		}
+		// Add status if available
+		if status, ok := statusMap[obj.Name]; ok {
+			doc.Status = status
+		}
+		documents = append(documents, doc)
 	}
 
 	log.Info("Successfully listed documents", "count", len(documents))
@@ -361,15 +398,87 @@ func (h *RAGIndicesHandler) HandleUploadDocument(w ErrorResponseWriter, r *http.
 		return
 	}
 
+	// Create document status record with pending status
+	docStatus := &database.DocumentStatus{
+		ID:        uuid.New().String(),
+		IndexName: indexName,
+		Filename:  handler.Filename,
+		Status:    "pending",
+	}
+
+	if err := h.DatabaseService.StoreDocumentStatus(docStatus); err != nil {
+		log.Error(err, "Failed to store document status")
+		// Don't fail the upload, just log the error - the document is already in MinIO
+	}
+
 	doc := RAGDocument{
 		Name:         handler.Filename,
 		Size:         handler.Size,
 		LastModified: time.Now().UTC(),
+		Status:       "pending",
 	}
 
 	log.Info("Successfully uploaded document")
 	data := api.NewResponse(doc, "Successfully uploaded document", false)
 	RespondWithJSON(w, http.StatusCreated, data)
+}
+
+// HandleDeleteDocument handles DELETE /api/indices/{name}/documents/{filename} requests
+func (h *RAGIndicesHandler) HandleDeleteDocument(w ErrorResponseWriter, r *http.Request) {
+	log := ctrllog.FromContext(r.Context()).WithName("rag-indices-handler").WithValues("operation", "delete-document")
+
+	if h.MinioClient == nil {
+		w.RespondWithError(errors.NewInternalServerError("MinIO client not configured", nil))
+		return
+	}
+
+	indexName, err := GetPathParam(r, "name")
+	if err != nil {
+		w.RespondWithError(errors.NewBadRequestError("Failed to get index name from path", err))
+		return
+	}
+
+	filename, err := GetPathParam(r, "filename")
+	if err != nil {
+		w.RespondWithError(errors.NewBadRequestError("Failed to get filename from path", err))
+		return
+	}
+	log = log.WithValues("indexName", indexName, "filename", filename)
+
+	// Check if bucket exists
+	exists, err := h.MinioClient.BucketExists(r.Context(), indexName)
+	if err != nil {
+		log.Error(err, "Failed to check bucket existence")
+		w.RespondWithError(errors.NewInternalServerError("Failed to check index", err))
+		return
+	}
+	if !exists {
+		w.RespondWithError(errors.NewNotFoundError("RAG index not found", nil))
+		return
+	}
+
+	// Don't allow deleting metadata file
+	if filename == metadataFile {
+		w.RespondWithError(errors.NewBadRequestError("Cannot delete reserved file", nil))
+		return
+	}
+
+	// Delete file from MinIO
+	if err := h.MinioClient.DeleteFile(r.Context(), indexName, filename); err != nil {
+		log.Error(err, "Failed to delete file from MinIO")
+		w.RespondWithError(errors.NewInternalServerError("Failed to delete document", err))
+		return
+	}
+
+	// Delete document status from database
+	if err := h.DatabaseService.DeleteDocumentStatus(indexName, filename); err != nil {
+		log.Error(err, "Failed to delete document status")
+		// Don't fail the request, the file is already deleted from MinIO
+	}
+
+	log.Info("Successfully deleted document")
+	data := api.NewResponse(struct{}{}, "Successfully deleted document", false)
+	RespondWithJSON(w, http.StatusOK, data)
 }
 
 // HandleDownloadDocument handles GET /api/indices/{name}/documents/{filename} requests
@@ -428,6 +537,80 @@ func (h *RAGIndicesHandler) HandleDownloadDocument(w ErrorResponseWriter, r *htt
 	w.Write(data)
 
 	log.Info("Successfully downloaded document")
+}
+
+// UpdateStatusRequest represents the request body for updating document status
+type UpdateStatusRequest struct {
+	Status   string `json:"status"`
+	ErrorMsg string `json:"error_msg,omitempty"`
+}
+
+// HandleUpdateDocumentStatus handles PUT /api/indices/{name}/documents/{filename}/status requests
+func (h *RAGIndicesHandler) HandleUpdateDocumentStatus(w ErrorResponseWriter, r *http.Request) {
+	log := ctrllog.FromContext(r.Context()).WithName("rag-indices-handler").WithValues("operation", "update-status")
+
+	indexName, err := GetPathParam(r, "name")
+	if err != nil {
+		w.RespondWithError(errors.NewBadRequestError("Failed to get index name from path", err))
+		return
+	}
+
+	filename, err := GetPathParam(r, "filename")
+	if err != nil {
+		w.RespondWithError(errors.NewBadRequestError("Failed to get filename from path", err))
+		return
+	}
+	log = log.WithValues("indexName", indexName, "filename", filename)
+
+	var req UpdateStatusRequest
+	if err := DecodeJSONBody(r, &req); err != nil {
+		w.RespondWithError(errors.NewBadRequestError("Invalid request body", err))
+		return
+	}
+
+	if req.Status == "" {
+		w.RespondWithError(errors.NewBadRequestError("Status is required", nil))
+		return
+	}
+
+	// Update status in database
+	if err := h.DatabaseService.UpdateDocumentStatus(indexName, filename, req.Status, req.ErrorMsg); err != nil {
+		log.Error(err, "Failed to update document status")
+		w.RespondWithError(errors.NewInternalServerError("Failed to update document status", err))
+		return
+	}
+
+	log.Info("Successfully updated document status", "status", req.Status)
+	data := api.NewResponse(struct{}{}, "Successfully updated document status", false)
+	RespondWithJSON(w, http.StatusOK, data)
+}
+
+// HandleDeleteDocumentStatus handles DELETE /api/indices/{name}/documents/{filename}/status requests
+func (h *RAGIndicesHandler) HandleDeleteDocumentStatus(w ErrorResponseWriter, r *http.Request) {
+	log := ctrllog.FromContext(r.Context()).WithName("rag-indices-handler").WithValues("operation", "delete-status")
+
+	indexName, err := GetPathParam(r, "name")
+	if err != nil {
+		w.RespondWithError(errors.NewBadRequestError("Failed to get index name from path", err))
+		return
+	}
+
+	filename, err := GetPathParam(r, "filename")
+	if err != nil {
+		w.RespondWithError(errors.NewBadRequestError("Failed to get filename from path", err))
+		return
+	}
+	log = log.WithValues("indexName", indexName, "filename", filename)
+
+	// Delete status from database
+	if err := h.DatabaseService.DeleteDocumentStatus(indexName, filename); err != nil {
+		log.Error(err, "Failed to delete document status")
+		// Don't fail - the status might not exist
+	}
+
+	log.Info("Successfully deleted document status")
+	data := api.NewResponse(struct{}{}, "Successfully deleted document status", false)
+	RespondWithJSON(w, http.StatusOK, data)
 }
 
 // getIndexMetadata retrieves the metadata for an index from MinIO

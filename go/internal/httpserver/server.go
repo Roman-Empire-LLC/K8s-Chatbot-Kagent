@@ -240,6 +240,9 @@ func (s *HTTPServer) setupRoutes() {
 	s.router.HandleFunc(APIPathRAGIndices+"/{name}/documents", adaptHandler(s.handlers.RAGIndices.HandleListDocuments)).Methods(http.MethodGet)
 	s.router.HandleFunc(APIPathRAGIndices+"/{name}/upload", adaptHandler(s.handlers.RAGIndices.HandleUploadDocument)).Methods(http.MethodPost)
 	s.router.HandleFunc(APIPathRAGIndices+"/{name}/documents/{filename}", adaptHandler(s.handlers.RAGIndices.HandleDownloadDocument)).Methods(http.MethodGet)
+	s.router.HandleFunc(APIPathRAGIndices+"/{name}/documents/{filename}", adaptHandler(s.handlers.RAGIndices.HandleDeleteDocument)).Methods(http.MethodDelete)
+	s.router.HandleFunc(APIPathRAGIndices+"/{name}/documents/{filename}/status", adaptHandler(s.handlers.RAGIndices.HandleUpdateDocumentStatus)).Methods(http.MethodPut)
+	s.router.HandleFunc(APIPathRAGIndices+"/{name}/documents/{filename}/status", adaptHandler(s.handlers.RAGIndices.HandleDeleteDocumentStatus)).Methods(http.MethodDelete)
 
 	// A2A
 	s.router.PathPrefix(APIPathA2A + "/{namespace}/{name}").Handler(s.config.A2AHandler)

@@ -105,6 +105,7 @@ func (m *Manager) Initialize() error {
 		&CrewAIAgentMemory{},
 		&CrewAIFlowState{},
 		&Role{},
+		&DocumentStatus{},
 	)
 
 	if err != nil {
@@ -136,6 +137,7 @@ func (m *Manager) Reset(recreateTables bool) error {
 		&CrewAIAgentMemory{},
 		&CrewAIFlowState{},
 		&Role{},
+		&DocumentStatus{},
 	)
 
 	if err != nil {

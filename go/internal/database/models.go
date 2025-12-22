@@ -211,6 +211,19 @@ type Role struct {
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
+// DocumentStatus represents the processing status of a RAG document
+type DocumentStatus struct {
+	ID          string         `gorm:"primaryKey;not null" json:"id"`
+	IndexName   string         `gorm:"index;not null" json:"index_name"`
+	Filename    string         `gorm:"not null" json:"filename"`
+	Status      string         `gorm:"not null" json:"status"` // pending, processing, processed, failed
+	ErrorMsg    string         `gorm:"type:text" json:"error_msg,omitempty"`
+	ProcessedAt *time.Time     `json:"processed_at,omitempty"`
+	CreatedAt   time.Time      `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt   time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+}
+
 // TableName methods to match Python table names
 func (Agent) TableName() string                    { return "agent" }
 func (Event) TableName() string                    { return "event" }
@@ -225,3 +238,4 @@ func (LangGraphCheckpointWrite) TableName() string { return "lg_checkpoint_write
 func (CrewAIAgentMemory) TableName() string        { return "crewai_agent_memory" }
 func (CrewAIFlowState) TableName() string          { return "crewai_flow_state" }
 func (Role) TableName() string                     { return "role" }
+func (DocumentStatus) TableName() string           { return "document_status" }

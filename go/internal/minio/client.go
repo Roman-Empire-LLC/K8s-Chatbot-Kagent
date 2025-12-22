@@ -9,6 +9,7 @@ import (
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/minio/minio-go/v7/pkg/notification"
 )
 
 // Config holds MinIO connection configuration
@@ -197,4 +198,30 @@ func (c *Client) ListObjectsInfo(ctx context.Context, bucketName, prefix string)
 	}
 
 	return objects, nil
+}
+
+// SetBucketNotification subscribes a bucket to a webhook for object events
+// webhookID is the identifier used in MINIO_NOTIFY_WEBHOOK_ENABLE_<ID> env var (e.g., "KAGENT")
+func (c *Client) SetBucketNotification(ctx context.Context, bucketName, webhookID string) error {
+	// Create ARN for MinIO webhook: arn:minio:sqs::<id>:webhook
+	// Format: arn:partition:service:region:account-id:resource
+	arn := notification.NewArn("minio", "sqs", "", webhookID, "webhook")
+
+	// Create queue configuration for object created and removed events
+	queueConfig := notification.NewConfig(arn)
+	queueConfig.AddEvents(
+		notification.ObjectCreatedAll,
+		notification.ObjectRemovedAll,
+	)
+
+	// Create bucket notification config
+	config := notification.Configuration{}
+	config.AddQueue(queueConfig)
+
+	// Set the notification on the bucket
+	if err := c.client.SetBucketNotification(ctx, bucketName, config); err != nil {
+		return fmt.Errorf("failed to set bucket notification: %w", err)
+	}
+
+	return nil
 }

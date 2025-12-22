@@ -211,3 +211,4 @@ go/bin/
 ## Test certificates
 python/packages/kagent-adk/tests/fixtures/certs/*.pem
 python/packages/kagent-adk/tests/fixtures/certs/*.srl
+/.claude/settings.local.json
