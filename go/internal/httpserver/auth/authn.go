@@ -43,10 +43,6 @@ func (a *UnsecureAuthenticator) Authenticate(ctx context.Context, reqHeaders htt
 		}
 	}
 
-	fmt.Printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
-	fmt.Printf("!!! [AUTHN] userID=%s rolesHeader=%q roles=%v\n", userID, rolesHeader, roles)
-	fmt.Printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n")
-
 	agentId := reqHeaders.Get("X-Agent-Name")
 	authHeader := reqHeaders.Get("Authorization")
 
