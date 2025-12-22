@@ -1,0 +1,1257 @@
+{
+  "info": {
+    "_postman_id": "kagent-controller-api",
+    "name": "kagent Controller API",
+    "description": "Complete API collection for kagent controller. Run `kubectl port-forward svc/kagent-controller 8083:8083 -n kagent` before using.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8083",
+      "type": "string"
+    },
+    {
+      "key": "namespace",
+      "value": "kagent",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "test-user",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health & Version",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Get Version",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/version",
+              "host": ["{{baseUrl}}"],
+              "path": ["version"]
+            }
+          },
+          "response": [
+            {
+              "name": "Version Response Example",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"error\": false,\n  \"data\": {\n    \"kagent_version\": \"0.1.0\",\n    \"git_commit\": \"abc123\",\n    \"build_date\": \"2025-01-01\"\n  },\n  \"message\": \"Success\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Agents",
+      "item": [
+        {
+          "name": "List All Agents",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/agents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "agents"]
+            }
+          }
+        },
+        {
+          "name": "Get Agent",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/agents/{{namespace}}/k8s-agent",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "agents", "{{namespace}}", "k8s-agent"]
+            }
+          }
+        },
+        {
+          "name": "Create Agent (Declarative)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"apiVersion\": \"kagent.dev/v1alpha2\",\n  \"kind\": \"Agent\",\n  \"metadata\": {\n    \"name\": \"my-custom-agent\",\n    \"namespace\": \"{{namespace}}\"\n  },\n  \"spec\": {\n    \"type\": \"Declarative\",\n    \"description\": \"A custom agent for specific tasks\",\n    \"declarative\": {\n      \"systemMessage\": \"You are a helpful Kubernetes assistant.\",\n      \"modelConfig\": \"default-model-config\",\n      \"stream\": true,\n      \"tools\": [\n        {\n          \"type\": \"McpServer\",\n          \"mcpServer\": {\n            \"name\": \"kagent-tool-server\",\n            \"toolNames\": [\n              \"k8s_get_resources\",\n              \"k8s_describe_resource\",\n              \"k8s_get_logs\"\n            ]\n          }\n        }\n      ],\n      \"a2aConfig\": {\n        \"skills\": [\n          {\n            \"id\": \"k8s-query\",\n            \"name\": \"Kubernetes Query\",\n            \"description\": \"Query Kubernetes resources\"\n          }\n        ]\n      }\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/agents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "agents"]
+            }
+          }
+        },
+        {
+          "name": "Update Agent",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"apiVersion\": \"kagent.dev/v1alpha2\",\n  \"kind\": \"Agent\",\n  \"metadata\": {\n    \"name\": \"my-custom-agent\",\n    \"namespace\": \"{{namespace}}\"\n  },\n  \"spec\": {\n    \"type\": \"Declarative\",\n    \"description\": \"Updated agent description\",\n    \"declarative\": {\n      \"systemMessage\": \"You are an expert Kubernetes assistant with deep knowledge of cloud-native technologies.\",\n      \"modelConfig\": \"default-model-config\",\n      \"stream\": true,\n      \"tools\": [\n        {\n          \"type\": \"McpServer\",\n          \"mcpServer\": {\n            \"name\": \"kagent-tool-server\",\n            \"toolNames\": [\n              \"k8s_get_resources\",\n              \"k8s_describe_resource\",\n              \"k8s_get_logs\",\n              \"k8s_get_events\"\n            ]\n          }\n        }\n      ]\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/agents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "agents"]
+            }
+          }
+        },
+        {
+          "name": "Delete Agent",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/agents/{{namespace}}/my-custom-agent",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "agents", "{{namespace}}", "my-custom-agent"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Model Configs",
+      "item": [
+        {
+          "name": "List All Model Configs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/modelconfigs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "modelconfigs"]
+            }
+          }
+        },
+        {
+          "name": "Get Model Config",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/modelconfigs/{{namespace}}/default-model-config",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "modelconfigs", "{{namespace}}", "default-model-config"]
+            }
+          }
+        },
+        {
+          "name": "Create Model Config (OpenAI)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ref\": \"{{namespace}}/my-openai-config\",\n  \"provider\": {\n    \"name\": \"OpenAI\",\n    \"type\": \"OpenAI\"\n  },\n  \"model\": \"gpt-4\",\n  \"apiKey\": \"sk-your-api-key-here\",\n  \"openAI\": {\n    \"baseUrl\": \"https://api.openai.com/v1\",\n    \"temperature\": \"0.7\",\n    \"maxTokens\": 4096\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/modelconfigs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "modelconfigs"]
+            }
+          }
+        },
+        {
+          "name": "Create Model Config (Groq)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ref\": \"{{namespace}}/groq-config\",\n  \"provider\": {\n    \"name\": \"OpenAI\",\n    \"type\": \"OpenAI\"\n  },\n  \"model\": \"llama-3.3-70b-versatile\",\n  \"apiKey\": \"gsk_your-groq-api-key\",\n  \"openAI\": {\n    \"baseUrl\": \"https://api.groq.com/openai/v1\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/modelconfigs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "modelconfigs"]
+            }
+          }
+        },
+        {
+          "name": "Create Model Config (Anthropic)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ref\": \"{{namespace}}/anthropic-config\",\n  \"provider\": {\n    \"name\": \"Anthropic\",\n    \"type\": \"Anthropic\"\n  },\n  \"model\": \"claude-sonnet-4-20250514\",\n  \"apiKey\": \"sk-ant-your-key\",\n  \"anthropic\": {\n    \"maxTokens\": 4096,\n    \"temperature\": \"0.7\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/modelconfigs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "modelconfigs"]
+            }
+          }
+        },
+        {
+          "name": "Create Model Config (Ollama)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ref\": \"{{namespace}}/ollama-config\",\n  \"provider\": {\n    \"name\": \"Ollama\",\n    \"type\": \"Ollama\"\n  },\n  \"model\": \"llama3.2\",\n  \"apiKey\": \"\",\n  \"ollama\": {\n    \"host\": \"http://ollama:11434\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/modelconfigs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "modelconfigs"]
+            }
+          }
+        },
+        {
+          "name": "Create Model Config (Azure OpenAI)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ref\": \"{{namespace}}/azure-config\",\n  \"provider\": {\n    \"name\": \"AzureOpenAI\",\n    \"type\": \"AzureOpenAI\"\n  },\n  \"model\": \"gpt-4\",\n  \"apiKey\": \"your-azure-api-key\",\n  \"azureOpenAI\": {\n    \"azureEndpoint\": \"https://your-resource.openai.azure.com/\",\n    \"apiVersion\": \"2024-02-15-preview\",\n    \"azureDeployment\": \"gpt-4-deployment\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/modelconfigs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "modelconfigs"]
+            }
+          }
+        },
+        {
+          "name": "Update Model Config",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider\": {\n    \"name\": \"OpenAI\",\n    \"type\": \"OpenAI\"\n  },\n  \"model\": \"gpt-4-turbo\",\n  \"apiKey\": \"sk-updated-api-key\",\n  \"openAI\": {\n    \"baseUrl\": \"https://api.openai.com/v1\",\n    \"temperature\": \"0.5\",\n    \"maxTokens\": 8192\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/modelconfigs/{{namespace}}/my-openai-config",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "modelconfigs", "{{namespace}}", "my-openai-config"]
+            }
+          }
+        },
+        {
+          "name": "Delete Model Config",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/modelconfigs/{{namespace}}/my-openai-config",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "modelconfigs", "{{namespace}}", "my-openai-config"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sessions",
+      "item": [
+        {
+          "name": "List All Sessions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-ID",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sessions"]
+            }
+          }
+        },
+        {
+          "name": "Create Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-ID",
+                "value": "{{userId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"agent_ref\": \"{{namespace}}/k8s-agent\",\n  \"name\": \"My Chat Session\",\n  \"id\": \"session-001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sessions"]
+            }
+          }
+        },
+        {
+          "name": "Get Session",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-ID",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions/session-001",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sessions", "session-001"]
+            }
+          }
+        },
+        {
+          "name": "Get Session with Pagination",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-ID",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions/session-001?limit=50&after=2025-01-01T00:00:00Z",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sessions", "session-001"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "after",
+                  "value": "2025-01-01T00:00:00Z"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Sessions for Agent",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-ID",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions/agent/{{namespace}}/k8s-agent",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sessions", "agent", "{{namespace}}", "k8s-agent"]
+            }
+          }
+        },
+        {
+          "name": "Update Session",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-ID",
+                "value": "{{userId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"agent_ref\": \"{{namespace}}/helm-agent\",\n  \"name\": \"session-001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions/session-001",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sessions", "session-001"]
+            }
+          }
+        },
+        {
+          "name": "Add Event to Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-ID",
+                "value": "{{userId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"event-001\",\n  \"data\": \"{\\\"type\\\": \\\"user_message\\\", \\\"content\\\": \\\"What pods are running?\\\"}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions/session-001/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sessions", "session-001", "events"]
+            }
+          }
+        },
+        {
+          "name": "List Tasks for Session",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-ID",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions/session-001/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sessions", "session-001", "tasks"]
+            }
+          }
+        },
+        {
+          "name": "Delete Session",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-User-ID",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions/session-001",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sessions", "session-001"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "item": [
+        {
+          "name": "Create Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"task-001\",\n  \"sessionId\": \"session-001\",\n  \"status\": {\n    \"state\": \"submitted\"\n  },\n  \"message\": {\n    \"role\": \"user\",\n    \"parts\": [\n      {\n        \"type\": \"text\",\n        \"text\": \"List all pods in the default namespace\"\n      }\n    ]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks"]
+            }
+          }
+        },
+        {
+          "name": "Get Task",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/task-001",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "task-001"]
+            }
+          }
+        },
+        {
+          "name": "Delete Task",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/task-001",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "task-001"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tools",
+      "item": [
+        {
+          "name": "List All Tools",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tools",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tools"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tool Servers",
+      "item": [
+        {
+          "name": "List All Tool Servers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/toolservers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "toolservers"]
+            }
+          }
+        },
+        {
+          "name": "List Tool Server Types",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/toolservertypes",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "toolservertypes"]
+            }
+          }
+        },
+        {
+          "name": "Create RemoteMCPServer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"RemoteMCPServer\",\n  \"remoteMCPServer\": {\n    \"apiVersion\": \"kagent.dev/v1alpha2\",\n    \"kind\": \"RemoteMCPServer\",\n    \"metadata\": {\n      \"name\": \"my-remote-mcp\",\n      \"namespace\": \"{{namespace}}\"\n    },\n    \"spec\": {\n      \"url\": \"http://my-mcp-server:8080/sse\",\n      \"transport\": \"sse\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/toolservers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "toolservers"]
+            }
+          }
+        },
+        {
+          "name": "Create MCPServer (stdio)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"MCPServer\",\n  \"mcpServer\": {\n    \"apiVersion\": \"kagent.dev/v1alpha1\",\n    \"kind\": \"MCPServer\",\n    \"metadata\": {\n      \"name\": \"my-stdio-mcp\",\n      \"namespace\": \"{{namespace}}\"\n    },\n    \"spec\": {\n      \"command\": \"python\",\n      \"args\": [\"-m\", \"my_mcp_server\"],\n      \"env\": [\n        {\n          \"name\": \"API_KEY\",\n          \"value\": \"secret\"\n        }\n      ]\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/toolservers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "toolservers"]
+            }
+          }
+        },
+        {
+          "name": "Delete Tool Server",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/toolservers/{{namespace}}/my-remote-mcp",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "toolservers", "{{namespace}}", "my-remote-mcp"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Providers & Models",
+      "item": [
+        {
+          "name": "List Model Providers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/providers/models",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "providers", "models"]
+            }
+          }
+        },
+        {
+          "name": "List Memory Providers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/providers/memories",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "providers", "memories"]
+            }
+          }
+        },
+        {
+          "name": "List Supported Models",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/models",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "models"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Memories",
+      "item": [
+        {
+          "name": "List All Memories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/memories",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "memories"]
+            }
+          }
+        },
+        {
+          "name": "Get Memory",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/memories/{{namespace}}/my-memory",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "memories", "{{namespace}}", "my-memory"]
+            }
+          }
+        },
+        {
+          "name": "Create Memory (Pinecone)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ref\": \"{{namespace}}/my-memory\",\n  \"provider\": {\n    \"name\": \"Pinecone\",\n    \"type\": \"Pinecone\"\n  },\n  \"apiKey\": \"your-pinecone-api-key\",\n  \"pinecone\": {\n    \"indexHost\": \"https://my-index-abc123.svc.pinecone.io\",\n    \"namespace\": \"default\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/memories",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "memories"]
+            }
+          }
+        },
+        {
+          "name": "Update Memory",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pinecone\": {\n    \"indexHost\": \"https://updated-index.svc.pinecone.io\",\n    \"namespace\": \"production\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/memories/{{namespace}}/my-memory",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "memories", "{{namespace}}", "my-memory"]
+            }
+          }
+        },
+        {
+          "name": "Delete Memory",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/memories/{{namespace}}/my-memory",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "memories", "{{namespace}}", "my-memory"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Namespaces",
+      "item": [
+        {
+          "name": "List Watched Namespaces",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/namespaces",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "namespaces"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Feedback",
+      "item": [
+        {
+          "name": "List Feedback",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/feedback",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "feedback"]
+            }
+          }
+        },
+        {
+          "name": "Submit Feedback",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"session-001\",\n  \"taskId\": \"task-001\",\n  \"rating\": 5,\n  \"comment\": \"Very helpful response!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/feedback",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "feedback"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "LangGraph Checkpoints",
+      "item": [
+        {
+          "name": "List Checkpoints",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/langgraph/checkpoints",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "langgraph", "checkpoints"]
+            }
+          }
+        },
+        {
+          "name": "Create Checkpoint",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"thread_id\": \"thread-001\",\n  \"checkpoint_id\": \"cp-001\",\n  \"checkpoint_ns\": \"default\",\n  \"channel_values\": {},\n  \"channel_versions\": {},\n  \"versions_seen\": {},\n  \"pending_sends\": []\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/langgraph/checkpoints",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "langgraph", "checkpoints"]
+            }
+          }
+        },
+        {
+          "name": "Put Writes",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"thread_id\": \"thread-001\",\n  \"checkpoint_id\": \"cp-001\",\n  \"checkpoint_ns\": \"default\",\n  \"writes\": [],\n  \"task_id\": \"task-001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/langgraph/checkpoints/writes",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "langgraph", "checkpoints", "writes"]
+            }
+          }
+        },
+        {
+          "name": "Delete Thread",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/langgraph/checkpoints/thread-001",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "langgraph", "checkpoints", "thread-001"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "CrewAI",
+      "item": [
+        {
+          "name": "Get Memory",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/crewai/memory?crew_name=my-crew",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "crewai", "memory"],
+              "query": [
+                {
+                  "key": "crew_name",
+                  "value": "my-crew"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Store Memory",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"crew_name\": \"my-crew\",\n  \"memory_type\": \"short_term\",\n  \"data\": {\n    \"key\": \"value\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/crewai/memory",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "crewai", "memory"]
+            }
+          }
+        },
+        {
+          "name": "Reset Memory",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/crewai/memory?crew_name=my-crew",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "crewai", "memory"],
+              "query": [
+                {
+                  "key": "crew_name",
+                  "value": "my-crew"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Flow State",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/crewai/flows/state?flow_name=my-flow",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "crewai", "flows", "state"],
+              "query": [
+                {
+                  "key": "flow_name",
+                  "value": "my-flow"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Store Flow State",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"flow_name\": \"my-flow\",\n  \"state\": {\n    \"current_step\": 1,\n    \"data\": {}\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/crewai/flows/state",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "crewai", "flows", "state"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "A2A (Agent-to-Agent)",
+      "item": [
+        {
+          "name": "Get Agent Card",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/a2a/{{namespace}}/k8s-agent/.well-known/agent.json",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "a2a", "{{namespace}}", "k8s-agent", ".well-known", "agent.json"]
+            }
+          }
+        },
+        {
+          "name": "Send Task (SSE Stream)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "text/event-stream"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"1\",\n  \"method\": \"tasks/send\",\n  \"params\": {\n    \"id\": \"task-a2a-001\",\n    \"sessionId\": \"session-001\",\n    \"message\": {\n      \"role\": \"user\",\n      \"parts\": [\n        {\n          \"type\": \"text\",\n          \"text\": \"What pods are running in the default namespace?\"\n        }\n      ]\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/a2a/{{namespace}}/k8s-agent/tasks/send",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "a2a", "{{namespace}}", "k8s-agent", "tasks", "send"]
+            },
+            "description": "This endpoint returns Server-Sent Events (SSE). The response will be streamed as the agent processes the request."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Roles",
+      "item": [
+        {
+          "name": "List All Roles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/roles",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "roles"]
+            }
+          }
+        },
+        {
+          "name": "Get Role",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/roles/admin",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "roles", "admin"]
+            }
+          }
+        },
+        {
+          "name": "Create Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"admin\",\n  \"description\": \"Administrator role with full access\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/roles",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "roles"]
+            }
+          }
+        },
+        {
+          "name": "Update Role",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated admin role description\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/roles/admin",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "roles", "admin"]
+            }
+          }
+        },
+        {
+          "name": "Delete Role",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/roles/admin",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "roles", "admin"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "RAG Indices",
+      "item": [
+        {
+          "name": "List All Indices",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/indices",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "indices"]
+            }
+          }
+        },
+        {
+          "name": "Get Index",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/indices/my-docs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "indices", "my-docs"]
+            }
+          }
+        },
+        {
+          "name": "Create Index",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"my-docs\",\n  \"description\": \"My documentation index\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/indices",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "indices"]
+            }
+          }
+        },
+        {
+          "name": "Delete Index",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/indices/my-docs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "indices", "my-docs"]
+            }
+          }
+        },
+        {
+          "name": "List Documents in Index",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/indices/my-docs/documents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "indices", "my-docs", "documents"]
+            }
+          }
+        },
+        {
+          "name": "Upload Document",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/indices/my-docs/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "indices", "my-docs", "upload"]
+            },
+            "description": "Upload a document to a RAG index. Supported file types: .txt, .md, .json, .csv, .docx, .pdf. Max size: 50MB."
+          }
+        },
+        {
+          "name": "Download Document",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/indices/my-docs/documents/example.pdf",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "indices", "my-docs", "documents", "example.pdf"]
+            },
+            "description": "Download a document from a RAG index. Returns the file as a binary download."
+          }
+        },
+        {
+          "name": "Delete Document",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/indices/my-docs/documents/example.pdf",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "indices", "my-docs", "documents", "example.pdf"]
+            },
+            "description": "Delete a document from a RAG index. Also removes associated processing status from the database."
+          }
+        }
+      ]
+    }
+  ]
+}
