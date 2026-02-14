@@ -257,6 +257,56 @@ func (h *RAGIndicesHandler) HandleDeleteRAGIndex(w ErrorResponseWriter, r *http.
 	RespondWithJSON(w, http.StatusOK, data)
 }
 
+// UpdateRAGIndexRequest represents the request body for updating a RAG index
+type UpdateRAGIndexRequest struct {
+	Description string `json:"description"`
+}
+
+// HandleUpdateRAGIndex handles PUT /api/indices/{name} requests
+func (h *RAGIndicesHandler) HandleUpdateRAGIndex(w ErrorResponseWriter, r *http.Request) {
+	log := ctrllog.FromContext(r.Context()).WithName("rag-indices-handler").WithValues("operation", "update")
+
+	if h.MinioClient == nil {
+		w.RespondWithError(errors.NewInternalServerError("MinIO client not configured", nil))
+		return
+	}
+
+	indexName, err := GetPathParam(r, "name")
+	if err != nil {
+		w.RespondWithError(errors.NewBadRequestError("Failed to get index name from path", err))
+		return
+	}
+	log = log.WithValues("indexName", indexName)
+
+	var req UpdateRAGIndexRequest
+	if err := DecodeJSONBody(r, &req); err != nil {
+		w.RespondWithError(errors.NewBadRequestError("Invalid request body", err))
+		return
+	}
+
+	// Get existing metadata
+	metadata, err := h.getIndexMetadata(r.Context(), indexName)
+	if err != nil {
+		log.Error(err, "Failed to get index metadata")
+		w.RespondWithError(errors.NewNotFoundError("RAG index not found", err))
+		return
+	}
+
+	// Update description
+	metadata.Description = req.Description
+
+	// Store updated metadata
+	if err := h.putIndexMetadata(r.Context(), indexName, metadata); err != nil {
+		log.Error(err, "Failed to update metadata")
+		w.RespondWithError(errors.NewInternalServerError("Failed to update index", err))
+		return
+	}
+
+	log.Info("Successfully updated RAG index", "description", req.Description)
+	data := api.NewResponse(metadata, "Successfully updated RAG index", false)
+	RespondWithJSON(w, http.StatusOK, data)
+}
+
 // HandleListDocuments handles GET /api/indices/{name}/documents requests
 func (h *RAGIndicesHandler) HandleListDocuments(w ErrorResponseWriter, r *http.Request) {
 	log := ctrllog.FromContext(r.Context()).WithName("rag-indices-handler").WithValues("operation", "list-documents")

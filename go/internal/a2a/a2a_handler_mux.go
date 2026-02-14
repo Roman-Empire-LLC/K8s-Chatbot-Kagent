@@ -102,19 +102,9 @@ func (a *handlerMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	handlerName := common.ResourceRefString(agentNamespace, agentName)
 
-	fmt.Printf("\n################################################################\n")
-	fmt.Printf("### [A2A HANDLER] agent=%s authorizer=%v\n", handlerName, a.authorizer != nil)
-	fmt.Printf("################################################################\n\n")
-
 	// Check authorization if authorizer is configured
 	if a.authorizer != nil {
 		session, ok := auth.AuthSessionFrom(r.Context())
-		fmt.Printf("\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n")
-		fmt.Printf("@@@ [A2A AUTH CHECK] sessionFound=%v\n", ok)
-		if ok {
-			fmt.Printf("@@@ [A2A AUTH CHECK] principal=%+v\n", session.Principal())
-		}
-		fmt.Printf("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n\n")
 		if !ok {
 			respondWithJSONError(w, http.StatusUnauthorized, "Unauthorized: no valid session found")
 			return
@@ -124,19 +114,9 @@ func (a *handlerMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Name: handlerName,
 		}
 		if err := a.authorizer.Check(r.Context(), session.Principal(), auth.VerbGet, resource); err != nil {
-			fmt.Printf("\n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
-			fmt.Printf("$$$ [A2A DENIED] err=%v\n", err)
-			fmt.Printf("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n\n")
 			respondWithJSONError(w, http.StatusForbidden, fmt.Sprintf("Forbidden: %v", err))
 			return
 		}
-		fmt.Printf("\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
-		fmt.Printf("+++ [A2A ALLOWED]\n")
-		fmt.Printf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\n")
-	} else {
-		fmt.Printf("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
-		fmt.Printf("~~~ [A2A NO AUTHORIZER] skipping auth check\n")
-		fmt.Printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
 	}
 
 	// get the underlying handler

@@ -236,6 +236,7 @@ func (s *HTTPServer) setupRoutes() {
 	s.router.HandleFunc(APIPathRAGIndices, adaptHandler(s.handlers.RAGIndices.HandleListRAGIndices)).Methods(http.MethodGet)
 	s.router.HandleFunc(APIPathRAGIndices, adaptHandler(s.handlers.RAGIndices.HandleCreateRAGIndex)).Methods(http.MethodPost)
 	s.router.HandleFunc(APIPathRAGIndices+"/{name}", adaptHandler(s.handlers.RAGIndices.HandleGetRAGIndex)).Methods(http.MethodGet)
+	s.router.HandleFunc(APIPathRAGIndices+"/{name}", adaptHandler(s.handlers.RAGIndices.HandleUpdateRAGIndex)).Methods(http.MethodPut)
 	s.router.HandleFunc(APIPathRAGIndices+"/{name}", adaptHandler(s.handlers.RAGIndices.HandleDeleteRAGIndex)).Methods(http.MethodDelete)
 	s.router.HandleFunc(APIPathRAGIndices+"/{name}/documents", adaptHandler(s.handlers.RAGIndices.HandleListDocuments)).Methods(http.MethodGet)
 	s.router.HandleFunc(APIPathRAGIndices+"/{name}/upload", adaptHandler(s.handlers.RAGIndices.HandleUploadDocument)).Methods(http.MethodPost)
