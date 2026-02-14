@@ -4,9 +4,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kagent-dev/kagent/go/internal/database"
 	"github.com/kagent-dev/kagent/go/internal/minio"
 	"github.com/kagent-dev/kagent/go/pkg/auth"
+	"github.com/kagent-dev/kagent/go/pkg/database"
 )
 
 // Handlers holds all the HTTP handler components
@@ -36,15 +36,17 @@ type Base struct {
 	DefaultModelConfig types.NamespacedName
 	DatabaseService    database.Client
 	Authorizer         auth.Authorizer // Interface for authorization checks
+	ProxyURL           string
 }
 
 // NewHandlers creates a new Handlers instance with all handler components
-func NewHandlers(kubeClient client.Client, defaultModelConfig types.NamespacedName, dbService database.Client, watchedNamespaces []string, authorizer auth.Authorizer, minioClient *minio.Client) *Handlers {
+func NewHandlers(kubeClient client.Client, defaultModelConfig types.NamespacedName, dbService database.Client, watchedNamespaces []string, authorizer auth.Authorizer, proxyURL string, minioClient *minio.Client) *Handlers {
 	base := &Base{
 		KubeClient:         kubeClient,
 		DefaultModelConfig: defaultModelConfig,
 		DatabaseService:    dbService,
 		Authorizer:         authorizer,
+		ProxyURL:           proxyURL,
 	}
 
 	return &Handlers{

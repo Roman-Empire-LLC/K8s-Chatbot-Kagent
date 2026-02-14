@@ -58,7 +58,7 @@ jobs:
       - name: Set up Helm
         uses: azure/setup-helm@v4.2.0
         with:
-          version: v3.17.0
+          version: v3.18.0
 
       - name: Install Kind
         id: kind
@@ -91,7 +91,7 @@ jobs:
         working-directory: go
         run: |
           # Get the Kind network gateway IP that pods can reach
-          HOST_IP=$(docker network inspect kind -f '{{range .IPAM.Config}}{{.Gateway}}{{end}}')
+          HOST_IP=$(docker network inspect kind -f '{{range .IPAM.Config}}{{if .Gateway}}{{.Gateway}}{{"\n"}}{{end}}{{end}}' | grep -E '^[0-9]+\.' | head -1)
           echo "Detected Kind network gateway: $HOST_IP"
           export KAGENT_LOCAL_HOST=$HOST_IP
           
@@ -143,7 +143,7 @@ jobs:
       - name: Set up Helm
         uses: azure/setup-helm@v4.2.0
         with:
-          version: v3.17.0
+          version: v3.18.0
       # Install unittest plugin
       - name: Install unittest plugin
         run: |
@@ -166,12 +166,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: ui/package-lock.json
 
       - name: Install dependencies
         working-directory: ./ui
+        env:
+          CYPRESS_INSTALL_BINARY: 0  # Skip Cypress binary - not needed for lint/unit tests
         run: npm ci
 
       - name: Run lint
@@ -244,7 +246,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.7.2
+          version: v2.8.0
           working-directory: go
 
   python-test:
@@ -272,7 +274,7 @@ jobs:
 
       - name: Run tests
         working-directory: ./python
-        run: uv run pytest ./packages/**/tests/
+        run: make test
 
   python-lint:
     runs-on: ubuntu-latest
