@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/kagent-dev/kagent/go/api/v1alpha2"
 	dbpkg "github.com/kagent-dev/kagent/go/pkg/database"
@@ -571,42 +572,42 @@ func (c *clientImpl) GetCrewAIFlowState(userID, threadID string) (*dbpkg.CrewAIF
 // Role methods
 
 // StoreRole creates or updates a role
-func (c *clientImpl) StoreRole(role *Role) error {
+func (c *clientImpl) StoreRole(role *dbpkg.Role) error {
 	return save(c.db, role)
 }
 
 // GetRole retrieves a role by name
-func (c *clientImpl) GetRole(name string) (*Role, error) {
-	return get[Role](c.db, Clause{Key: "name", Value: name})
+func (c *clientImpl) GetRole(name string) (*dbpkg.Role, error) {
+	return get[dbpkg.Role](c.db, Clause{Key: "name", Value: name})
 }
 
 // ListRoles lists all roles
-func (c *clientImpl) ListRoles() ([]Role, error) {
-	return list[Role](c.db)
+func (c *clientImpl) ListRoles() ([]dbpkg.Role, error) {
+	return list[dbpkg.Role](c.db)
 }
 
 // DeleteRole deletes a role by name
 func (c *clientImpl) DeleteRole(name string) error {
-	return delete[Role](c.db, Clause{Key: "name", Value: name})
+	return delete[dbpkg.Role](c.db, Clause{Key: "name", Value: name})
 }
 
 // DocumentStatus methods
 
 // StoreDocumentStatus creates or updates a document status
-func (c *clientImpl) StoreDocumentStatus(status *DocumentStatus) error {
+func (c *clientImpl) StoreDocumentStatus(status *dbpkg.DocumentStatus) error {
 	return save(c.db, status)
 }
 
 // GetDocumentStatus retrieves a document status by index name and filename
-func (c *clientImpl) GetDocumentStatus(indexName, filename string) (*DocumentStatus, error) {
-	return get[DocumentStatus](c.db,
+func (c *clientImpl) GetDocumentStatus(indexName, filename string) (*dbpkg.DocumentStatus, error) {
+	return get[dbpkg.DocumentStatus](c.db,
 		Clause{Key: "index_name", Value: indexName},
 		Clause{Key: "filename", Value: filename})
 }
 
 // ListDocumentStatusesForIndex lists all document statuses for an index
-func (c *clientImpl) ListDocumentStatusesForIndex(indexName string) ([]DocumentStatus, error) {
-	return list[DocumentStatus](c.db, Clause{Key: "index_name", Value: indexName})
+func (c *clientImpl) ListDocumentStatusesForIndex(indexName string) ([]dbpkg.DocumentStatus, error) {
+	return list[dbpkg.DocumentStatus](c.db, Clause{Key: "index_name", Value: indexName})
 }
 
 // UpdateDocumentStatus updates the status and error message for a document
@@ -619,7 +620,7 @@ func (c *clientImpl) UpdateDocumentStatus(indexName, filename, status string, er
 		now := time.Now()
 		updates["processed_at"] = &now
 	}
-	result := c.db.Model(&DocumentStatus{}).
+	result := c.db.Model(&dbpkg.DocumentStatus{}).
 		Where("index_name = ? AND filename = ?", indexName, filename).
 		Updates(updates)
 	if result.Error != nil {
@@ -630,12 +631,12 @@ func (c *clientImpl) UpdateDocumentStatus(indexName, filename, status string, er
 
 // DeleteDocumentStatus deletes a document status by index name and filename
 func (c *clientImpl) DeleteDocumentStatus(indexName, filename string) error {
-	return delete[DocumentStatus](c.db,
+	return delete[dbpkg.DocumentStatus](c.db,
 		Clause{Key: "index_name", Value: indexName},
 		Clause{Key: "filename", Value: filename})
 }
 
 // DeleteDocumentStatusesForIndex deletes all document statuses for an index
 func (c *clientImpl) DeleteDocumentStatusesForIndex(indexName string) error {
-	return delete[DocumentStatus](c.db, Clause{Key: "index_name", Value: indexName})
+	return delete[dbpkg.DocumentStatus](c.db, Clause{Key: "index_name", Value: indexName})
 }

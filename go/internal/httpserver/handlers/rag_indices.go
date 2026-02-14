@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/kagent-dev/kagent/go/internal/database"
 	"github.com/kagent-dev/kagent/go/internal/httpserver/errors"
 	"github.com/kagent-dev/kagent/go/internal/minio"
 	"github.com/kagent-dev/kagent/go/pkg/client/api"
+	"github.com/kagent-dev/kagent/go/pkg/database"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 

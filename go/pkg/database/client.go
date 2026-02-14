@@ -70,4 +70,18 @@ type Client interface {
 	ResetCrewAIMemory(userID, threadID string) error
 	StoreCrewAIFlowState(state *CrewAIFlowState) error
 	GetCrewAIFlowState(userID, threadID string) (*CrewAIFlowState, error)
+
+	// Role methods
+	StoreRole(role *Role) error
+	GetRole(name string) (*Role, error)
+	ListRoles() ([]Role, error)
+	DeleteRole(name string) error
+
+	// DocumentStatus methods
+	StoreDocumentStatus(status *DocumentStatus) error
+	GetDocumentStatus(indexName, filename string) (*DocumentStatus, error)
+	ListDocumentStatusesForIndex(indexName string) ([]DocumentStatus, error)
+	UpdateDocumentStatus(indexName, filename, status string, errorMsg string) error
+	DeleteDocumentStatus(indexName, filename string) error
+	DeleteDocumentStatusesForIndex(indexName string) error
 }

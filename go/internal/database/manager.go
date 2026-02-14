@@ -105,8 +105,8 @@ func (m *Manager) Initialize() error {
 		&dbpkg.LangGraphCheckpointWrite{},
 		&dbpkg.CrewAIAgentMemory{},
 		&dbpkg.CrewAIFlowState{},
-		&Role{},
-		&DocumentStatus{},
+		&dbpkg.Role{},
+		&dbpkg.DocumentStatus{},
 	)
 
 	if err != nil {
@@ -137,8 +137,8 @@ func (m *Manager) Reset(recreateTables bool) error {
 		&dbpkg.LangGraphCheckpointWrite{},
 		&dbpkg.CrewAIAgentMemory{},
 		&dbpkg.CrewAIFlowState{},
-		&Role{},
-		&DocumentStatus{},
+		&dbpkg.Role{},
+		&dbpkg.DocumentStatus{},
 	)
 
 	if err != nil {
